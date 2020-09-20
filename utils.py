@@ -22,43 +22,6 @@ def equals(A, B):
 def length(u):
     return math.sqrt(dot(u, u))
 
-def normalize(v):
-    l = length(v)
-    return (v[0] / l, v[1] / l)
-
-def center_circumcircle(A, B, C):
-    #AB = vector(A, B)
-    #AC = vector(A, C)
-
-    #u = normalize(orthogonal(AB))
-    #v = normalize(orthogonal(AC))
-    #uv = dot(u, v)
-
-    #k = (dot(AC, u) + dot(AB, v) * uv) / (2 - 2 * uv * uv)
-    #return (AB[0] / 2 - k * u[0], AB[1] / 2 - k * u[1])
-
-    AB = vector(A, B)
-    AC = vector(A, C)
-    BC = vector(B, C)
-
-    u = orthogonal(AB)
-    v = orthogonal(AC)
-    u2 = dot(u, u)
-    v2 = dot(v, v)
-    uv = dot(u, v)
-
-    k = .5 * (dot(BC, u) * uv - dot(BC, v) * u2) / (uv * uv - u2 * v2)
-    return (A[0] + AC[0] / 2 - k * v[0], A[1] + AC[1] / 2 - k * v[1])
-
-
-def get_triangles(nodes):
-    triangles = list()
-    for n1 in nodes:
-        s = set(i for i in nodes if i != n1)
-        t = sorted(s, key = lambda x: distance2(x, n1))
-        triangles.append((n1, t[0], t[1]))
-    return triangles
-
 class Variable:
     def __init__(self):
         self.min = None

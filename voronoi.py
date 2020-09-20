@@ -119,8 +119,6 @@ class ChunkDatabase:
         offset = self.index[key]
         f.seek(offset)
 
-        #print("Load chunk @offset =", offset)
-
         n_points = int.from_bytes(f.read(1), byteorder = "little", signed = False)
 
         chunk = set()
@@ -152,7 +150,6 @@ class ChunkDatabase:
         return self.index_offset
         LEN_SEED = 4
         LEN_INDEX_OFFSET = 4
-        #LEN_INDEX = 4 + 12 * len(self.index.keys())
         LEN_CHUNKS = (1 + 8 * 16) * len(self.index.keys()) # TODO: change!
         return LEN_SEED + LEN_INDEX_OFFSET + LEN_CHUNKS
 

@@ -3,10 +3,9 @@ import math
 import utils
 
 class OtherItem:
-    def __init__(self, other, line):#, distance2):
+    def __init__(self, other, line):
         self.other = other
         self.line = line
-        #self.distance2 = distance2
         self.k = utils.Variable()
 
     def is_valid(self):
@@ -19,12 +18,11 @@ class PointItem:
 
     def add_other(self, other):
         u = utils.vector(self.point, other)
-        #distance2 = utils.dot(u, u)
 
         direction = utils.orthogonal(u)
         center = (.5 * (self.point[0] + other[0]), .5 * (self.point[1] + other[1]))
         line = InfiniteLine(center, direction)
-        new_item = OtherItem(other, line)#, distance2)
+        new_item = OtherItem(other, line)
 
         keep_new_item = True
         others_to_remove = set()
@@ -46,22 +44,6 @@ class PointItem:
             self.others |= {new_item}
             return new_item
         return None
-
-#    def force_add_new_item(self, other, mirror_item):
-#        # Assumes that new_item was returned from a relevant PointItem.add_other
-#
-#        new_item = OtherItem(other, mirror_item.line)
-#        others_to_remove = set()
-#        for other in self.others:
-#            new_item.line.constrain(other, self.point)
-#
-#            if not other.is_valid():
-#                others_to_remove |= {other}
-#        new_item.k.min = mirror_item.k.min
-#        new_item.k.max = mirror_item.k.max
-#
-#        self.others -= others_to_remove
-#        self.others |= {new_item}
 
 class InfiniteLine:
     def __init__(self, point, direction):
@@ -149,7 +131,6 @@ class PointSet:
             new_item = item.add_other(i.point)
             if new_item != None:
                 i.add_other(point)
-                #i.force_add_new_item(point, new_item)
         self.point_items |= {item}
 
 def common_to_segments(A, B):
