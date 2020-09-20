@@ -8,7 +8,7 @@ FPS = 60
 
 ZOOM = 4
 PX_TO_WORLD = lambda x: x * ZOOM / SIZE[1]
-WORLD_TO_PX = lambda x: int(x * 720 / ZOOM)
+WORLD_TO_PX = lambda x: int(x * SIZE[1] / ZOOM)
 
 def to_px(point):
     return (WORLD_TO_PX(point[0]), WORLD_TO_PX(point[1]))
@@ -41,8 +41,6 @@ class VoronoiViewer:
         self.v = v
 
     def draw(self, surface, offset_x, offset_y):
-        K = 1000
-
         for p in self.v.pointset.point_items:
             screen_pos = to_px(p.point)
             screen_pos = (screen_pos[0] - offset_x, screen_pos[1] - offset_y)
