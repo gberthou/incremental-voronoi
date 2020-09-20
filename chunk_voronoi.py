@@ -151,24 +151,3 @@ class VoronoiChunkDatabase:
         LEN_INDEX_OFFSET = 4
         LEN_CHUNKS = (1 + 8 * 16) * len(self.index.keys()) # TODO: change!
         return LEN_SEED + LEN_INDEX_OFFSET + LEN_CHUNKS
-
-class VoronoiExplorer:
-    def __init__(self, filename, density):
-        self.chunk_generator = VoronoiChunkGenerator(density)
-        self.chunk_database = ChunkDatabase(filename)
-        self.chunk_manager = chunk.ChunkManager(self.chunk_generator, self.chunk_database)
-
-        self.pointset = shapes.PointSet()
-
-    def load_chunk(self, key):
-        is_new_chunk, chunk = self.chunk_manager.load_chunk(key)
-
-        if is_new_chunk:
-            for point in chunk:
-                self.pointset.add_point(point)
-
-    def unload_chunk(self, key):
-        chunk = self.chunk_manager.unload_chunk(key)
-
-    def keep_only_chunks(self, keys):
-        self.chunk_manager.keep_only_chunks(keys)

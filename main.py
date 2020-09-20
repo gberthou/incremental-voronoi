@@ -14,16 +14,16 @@ def to_px(point):
     return (WORLD_TO_PX(point[0]), WORLD_TO_PX(point[1]))
 
 def update_viewport(voronoi_explorer, offset_x, offset_y):
-    MARGINX = 1
-    MARGINY = 1
+    MARGINX = SIZE[0]/2
+    MARGINY = SIZE[1]/2
 
-    xmin = math.floor(PX_TO_WORLD(offset_x))
-    xmax = math.ceil(PX_TO_WORLD(SIZE[0] + offset_x))
+    xmin = math.floor(PX_TO_WORLD(offset_x - MARGINX))
+    xmax = math.ceil(PX_TO_WORLD(SIZE[0] + offset_x + MARGINX))
 
-    ymin = math.floor(PX_TO_WORLD(offset_y))
-    ymax = math.ceil(PX_TO_WORLD(SIZE[1] + offset_y))
+    ymin = math.floor(PX_TO_WORLD(offset_y - MARGINY))
+    ymax = math.ceil(PX_TO_WORLD(SIZE[1] + offset_y + MARGINY))
 
-    keys_to_keep = set((x, y) for x in range(xmin - MARGINX, xmax + MARGINX + 1) for y in range(ymin - MARGINY, ymax + MARGINY + 1))
+    keys_to_keep = set((x, y) for x in range(xmin, xmax + 1) for y in range(ymin , ymax + 1))
     voronoi_explorer.keep_only_chunks(keys_to_keep)
 
     for key in keys_to_keep:

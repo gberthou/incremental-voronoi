@@ -30,5 +30,4 @@ class ChunkManager:
         return chunk
 
     def keep_only_chunks(self, keys):
-        for key in self.loaded_chunks.keys() - keys:
-            self.unload_chunk(key)
+        return list(self.unload_chunk(key) for key in self.loaded_chunks.keys() - keys)

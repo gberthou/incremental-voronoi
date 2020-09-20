@@ -28,6 +28,8 @@ class PointItem:
         keep_new_item = True
         others_to_remove = set()
 
+        tmp = other
+
         for other in self.others:
             other.line.constrain(new_item, self.point)
             new_item.line.constrain(other, self.point)
@@ -46,6 +48,15 @@ class PointItem:
             return new_item
         return None
 
+    def delete_points(self, points_to_delete):
+        EPSILON = 1e-4
+        others_to_delete = set()
+        for p in points_to_delete:
+            for other in self.others:
+                if utils.distance2(other.other, p) < EPSILON:
+                    others_to_delete |= {other}
+        self.others -= others_to_delete
+
 class PointSet:
     def __init__(self):
         self.point_items = set()
@@ -58,6 +69,20 @@ class PointSet:
             if new_item != None:
                 i.add_other(point)
         self.point_items |= {item}
+
+    def delete_points(self, points_to_delete):
+        EPSILON = 1e-4
+        items_to_delete = set()
+        for i in self.point_items:
+            to_delete = False
+            for p in points_to_delete:
+                if utils.distance2(i.point, p) < EPSILON:
+                    items_to_delete |= {i}
+                    to_delete = True
+                    break
+            if not to_delete:
+                i.delete_points(points_to_delete)
+        self.point_items -= items_to_delete
 
 class VoronoiExplorer:
     def __init__(self, filename, density):
@@ -75,7 +100,10 @@ class VoronoiExplorer:
                 self.pointset.add_point(point)
 
     def unload_chunk(self, key):
-        chunk = self.chunk_manager.unload_chunk(key)
+        deleted_chunk = self.chunk_manager.unload_chunk(key)
+        self.pointset.delete_points(deleted_chunk)
 
     def keep_only_chunks(self, keys):
-        self.chunk_manager.keep_only_chunks(keys)
+        deleted_chunks = self.chunk_manager.keep_only_chunks(keys)
+        for deleted_chunk in deleted_chunks:
+            self.pointset.delete_points(deleted_chunk)
