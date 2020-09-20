@@ -1,165 +1,71 @@
-import random
-import time
-import struct
-import math
+import utils
+import shapes
+import chunk_generic
+import chunk_voronoi
 
-import shapes 
-import chunk
+class OtherItem:
+    def __init__(self, other, line):
+        self.other = other
+        self.line = line
+        self.k = utils.Variable()
 
-def rand_pos_neg(amplitude):
-    return (random.random() - .5) * 2. * amplitude
+    def is_valid(self):
+        return self.k.is_valid()
 
-class ChunkGenerator:
-    def __init__(self, density):
-        self.density = density
+class PointItem:
+    def __init__(self, point):
+        self.point = point
+        self.others = set()
 
-    def new_chunk(self, key):
-        x, y = key
-        ret = set()
+    def add_other(self, other):
+        u = utils.vector(self.point, other)
 
-        N = int(math.sqrt(self.density))
+        direction = utils.orthogonal(u)
+        center = (.5 * (self.point[0] + other[0]), .5 * (self.point[1] + other[1]))
+        line = shapes.InfiniteLine(center, direction)
+        new_item = OtherItem(other, line)
 
-        for j in range(N):
-            dy = (j + 0.5) / N
-            for i in range(N):
-                dx = (i + 0.5) / N
-                ret |= {(x + dx + rand_pos_neg(0.45) / N,
-                         y + dy + rand_pos_neg(0.45) / N)}
-        return ret
+        keep_new_item = True
+        others_to_remove = set()
 
-class ChunkDatabase:
-    def __init__(self, filename):
-        self.filename = filename
-        self.index = dict()
-        self.index_offset = 0
-        
-        try:
-            with open(filename, "rb") as f:
-                self._load_seed(f)
-                self._load_index(f)
-        except FileNotFoundError:
-            with open(filename, "wb") as f:
-                self._create_seed()
-                self._save_seed(f)
-                self._save_empty_index(f)
+        for other in self.others:
+            other.line.constrain(new_item, self.point)
+            new_item.line.constrain(other, self.point)
 
-    def load(self, key):
-        if not key in self.index.keys():
-            return None
+            if not other.is_valid():
+                others_to_remove |= {other}
 
-        with open(self.filename, "rb") as f:
-            return self._load_chunk(f, key)
+            if not new_item.is_valid():
+                keep_new_item = False
+                break
 
-    def save(self, key, chunk):
-        with open(self.filename, "rb+") as f:
-            if key not in self.index.keys():
-                self._create_index(key, f)
+        self.others -= others_to_remove
 
-            self._save_chunk(f, key, chunk)
+        if keep_new_item:
+            self.others |= {new_item}
+            return new_item
+        return None
 
-    def _create_index(self, key, f):
-        # 1. Create new entry
-        self.index[key] = self._next_offset()
+class PointSet:
+    def __init__(self):
+        self.point_items = set()
 
-        # 2. Update index offset
-        self.index_offset += 1 + 8*16 # sizeof(chunk) TODO change
+    def add_point(self, point):
+        item = PointItem(point)
 
-        # 3. Save index back
-        self._save_index(f)
-
-    def _create_seed(self):
-        self.seed = int(time.time())
-
-    def _load_seed(self, f):
-        f.seek(0)
-        self.seed = int.from_bytes(f.read(4), byteorder = "little", signed = False)
-
-    def _save_seed(self, f):
-        f.seek(0)
-        f.write(self.seed.to_bytes(4, byteorder = "little", signed = False))
-
-    def _save_empty_index(self, f):
-        self.index_offset = 8
-        self._save_index(f)
-
-    def _load_index(self, f):
-        f.seek(4)
-        self.index_offset = int.from_bytes(f.read(4), byteorder = "little", signed = False)
-
-        f.seek(self.index_offset)
-        n_entries = int.from_bytes(f.read(4), byteorder = "little", signed = False)
-
-        for i in range(n_entries):
-            x = int.from_bytes(f.read(4), byteorder = "little", signed = True)
-            y = int.from_bytes(f.read(4), byteorder = "little", signed = True)
-            offset = int.from_bytes(f.read(4), byteorder = "little", signed = False)
-            
-            self.index[x, y] = offset
-
-    def _save_index(self, f):
-        f.seek(4)
-        f.write(self.index_offset.to_bytes(4, byteorder = "little", signed = False))
-            
-        f.seek(self.index_offset)
-        n_entries = len(self.index.keys())
-
-        # n_entries
-        f.write(n_entries.to_bytes(4, byteorder = "little", signed = False))
-
-        keys = set(self.index.keys())
-        for i in range(n_entries):
-            x, y = keys.pop()
-            f.write(x.to_bytes(4, byteorder = "little", signed = True))
-            f.write(y.to_bytes(4, byteorder = "little", signed = True))
-            f.write(self.index[x, y].to_bytes(4, byteorder = "little", signed = False))
-
-    def _load_chunk(self, f, key):
-        x, y = key
-
-        offset = self.index[key]
-        f.seek(offset)
-
-        n_points = int.from_bytes(f.read(1), byteorder = "little", signed = False)
-
-        chunk = set()
-
-        for i in range(n_points):
-            local_x = struct.unpack("f", f.read(4))[0]
-            local_y = struct.unpack("f", f.read(4))[0]
-            chunk |= {(x + local_x, y + local_y)}
-        return chunk
-
-    def _save_chunk(self, f, key, chunk):
-        x, y = key
-
-        offset = self.index[key]
-        f.seek(offset)
-
-        # n_points
-        f.write(len(chunk).to_bytes(1, byteorder = "little", signed = False))
-
-        copy = set(chunk)
-        while len(copy) > 0:
-            total_x, total_y = copy.pop()
-            local_x = total_x - x
-            local_y = total_y - y
-            f.write(bytearray(struct.pack("f", local_x)))
-            f.write(bytearray(struct.pack("f", local_y)))
-
-    def _next_offset(self):
-        return self.index_offset
-        LEN_SEED = 4
-        LEN_INDEX_OFFSET = 4
-        LEN_CHUNKS = (1 + 8 * 16) * len(self.index.keys()) # TODO: change!
-        return LEN_SEED + LEN_INDEX_OFFSET + LEN_CHUNKS
+        for i in self.point_items:
+            new_item = item.add_other(i.point)
+            if new_item != None:
+                i.add_other(point)
+        self.point_items |= {item}
 
 class VoronoiExplorer:
     def __init__(self, filename, density):
-        self.chunk_generator = ChunkGenerator(density)
-        self.chunk_database = ChunkDatabase(filename)
-        self.chunk_manager = chunk.ChunkManager(self.chunk_generator, self.chunk_database)
+        self.chunk_generator = chunk_voronoi.VoronoiChunkGenerator(density)
+        self.chunk_database = chunk_voronoi.VoronoiChunkDatabase(filename)
+        self.chunk_manager = chunk_generic.ChunkManager(self.chunk_generator, self.chunk_database)
 
-        self.pointset = shapes.PointSet()
+        self.pointset = PointSet()
 
     def load_chunk(self, key):
         is_new_chunk, chunk = self.chunk_manager.load_chunk(key)

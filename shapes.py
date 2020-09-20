@@ -2,49 +2,6 @@ import math
 
 import utils
 
-class OtherItem:
-    def __init__(self, other, line):
-        self.other = other
-        self.line = line
-        self.k = utils.Variable()
-
-    def is_valid(self):
-        return self.k.is_valid()
-
-class PointItem:
-    def __init__(self, point):
-        self.point = point
-        self.others = set()
-
-    def add_other(self, other):
-        u = utils.vector(self.point, other)
-
-        direction = utils.orthogonal(u)
-        center = (.5 * (self.point[0] + other[0]), .5 * (self.point[1] + other[1]))
-        line = InfiniteLine(center, direction)
-        new_item = OtherItem(other, line)
-
-        keep_new_item = True
-        others_to_remove = set()
-
-        for other in self.others:
-            other.line.constrain(new_item, self.point)
-            new_item.line.constrain(other, self.point)
-
-            if not other.is_valid():
-                others_to_remove |= {other}
-
-            if not new_item.is_valid():
-                keep_new_item = False
-                break
-
-        self.others -= others_to_remove
-
-        if keep_new_item:
-            self.others |= {new_item}
-            return new_item
-        return None
-
 class InfiniteLine:
     def __init__(self, point, direction):
         self.point = point
@@ -119,33 +76,6 @@ class Segment:
         else:
             raise Exception("Segment.replace")
         self.line = InfiniteLine(self.A, utils.vector(self.A, self.B))
-
-class PointSet:
-    def __init__(self):
-        self.point_items = set()
-
-    def add_point(self, point):
-        item = PointItem(point)
-
-        for i in self.point_items:
-            new_item = item.add_other(i.point)
-            if new_item != None:
-                i.add_other(point)
-        self.point_items |= {item}
-
-def common_to_segments(A, B):
-    if utils.equals(A.A, B.A) or utils.equals(A.A, B.B):
-        return A.A
-    if utils.equals(A.B, B.A) or utils.equals(A.B, B.B):
-        return A.B
-    return None
-
-def other_vertex_of_segment(A, x):
-    if utils.equals(A.A, x):
-        return A.B
-    if utils.equals(A.B, x):
-        return A.A
-    return None
 
 class Shape:
     def __init__(self, point_item):
