@@ -29,6 +29,11 @@ def update_viewport(voronoi_explorer, offset_x, offset_y):
     for key in keys_to_keep:
         voronoi_explorer.load_chunk(key)
 
+def point_item_to_hull(point_item, offset_x, offset_y):
+    shape = shapes.Shape(point_item)
+    points = list(to_px(v) for v in shape.vertices)
+    return list((x - offset_x, y - offset_y) for x, y in points)
+
 v = voronoi.VoronoiExplorer("world0", 4)
 
 import math
@@ -41,7 +46,9 @@ class VoronoiViewer:
         self.v = v
         self.offset_x = 0
         self.offset_y = 0
+
         self.selected_polygon = None
+        #self.selected_neighbors = None
 
     def set_offset(self, x, y):
         self.offset_x = x
@@ -50,12 +57,10 @@ class VoronoiViewer:
         centerX = PX_TO_WORLD(SIZE[0] / 2 + offset_x)
         centerY = PX_TO_WORLD(SIZE[1] / 2 + offset_y)
         point_item_center = self.v.pointset.item_that_contains((centerX, centerY))
-        shape = shapes.Shape(point_item_center)
-        if len(shape.vertices) >= 3:
-            points = list(to_px(v) for v in shape.vertices)
-            self.selected_polygon = list((x - offset_x, y - offset_y) for x, y in points)
-        else:
-            self.selected_polygon = None
+
+        self.selected_polygon = point_item_to_hull(point_item_center, x, y)
+        #self.selected_neighbors = self.v.pointset.neighbors_of(point_item_center)
+        print(len(self.v.pointset.neighbors_of(point_item_center)))
 
     def draw(self, surface):
         for p in self.v.pointset.point_items:
@@ -63,14 +68,17 @@ class VoronoiViewer:
             screen_pos = (screen_pos[0] - self.offset_x, screen_pos[1] - self.offset_y)
             pygame.draw.circle(surface, (0, 255, 0), screen_pos, 2)
 
-            shape = shapes.Shape(p)
-            if len(shape.vertices) >= 3:
-                points = list(to_px(v) for v in shape.vertices)
-                points = list((x - self.offset_x, y - self.offset_y) for x, y in points)
+            points = point_item_to_hull(p, self.offset_x, self.offset_y)
+            if len(points) >= 3:
                 pygame.draw.polygon(surface, (255, 0, 255), points, 4)
 
             if self.selected_polygon != None:
                 pygame.draw.polygon(surface, (255, 0, 255), self.selected_polygon)
+
+                #for neighbor in self.selected_neighbors:
+                #    points = point_item_to_hull(neighbor, offset_x, offset_y)
+                #    if len(points) >= 3:
+                #        pygame.draw.polygon(surface, (255, 255, 255), points)
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)

@@ -123,6 +123,15 @@ class PointSet:
                 return point_item
         raise Exception("PointSet.item_that_contains: not found")
 
+    def neighbors_of(self, point_item):
+        ret = set()
+        for a, b in self.edges:
+            if a == point_item:
+                ret |= {b}
+            elif b == point_item:
+                ret |= {a}
+        return ret
+
 class VoronoiExplorer:
     def __init__(self, filename, density):
         self.chunk_generator = chunk_voronoi.VoronoiChunkGenerator(density)
