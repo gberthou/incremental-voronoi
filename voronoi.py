@@ -28,8 +28,6 @@ class PointItem:
         keep_new_item = True
         others_to_remove = set()
 
-        tmp = other
-
         for other in self.others:
             other.line.constrain(new_item, self.point)
             new_item.line.constrain(other, self.point)
@@ -60,6 +58,7 @@ class PointItem:
 class PointSet:
     def __init__(self):
         self.point_items = set()
+        self.edges = set()
 
     def add_point(self, point):
         item = PointItem(point)
@@ -68,6 +67,7 @@ class PointSet:
             new_item = item.add_other(i.point)
             if new_item != None:
                 i.add_other(point)
+                self.edges |= {(i, item)}
         self.point_items |= {item}
 
     def delete_points(self, points_to_delete):
@@ -83,6 +83,8 @@ class PointSet:
             if not to_delete:
                 i.delete_points(points_to_delete)
         self.point_items -= items_to_delete
+        for p in points_to_delete:
+            self.edges -= set((a, b) for a, b in self.edges if utils.distance2(p, a.point) < EPSILON or utils.distance2(p, b.point) < EPSILON)
 
 class VoronoiExplorer:
     def __init__(self, filename, density):
