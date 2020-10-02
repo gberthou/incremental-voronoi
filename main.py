@@ -39,18 +39,38 @@ import shapes
 class VoronoiViewer:
     def __init__(self, v):
         self.v = v
+        self.offset_x = 0
+        self.offset_y = 0
+        self.selected_polygon = None
 
-    def draw(self, surface, offset_x, offset_y):
+    def set_offset(self, x, y):
+        self.offset_x = x
+        self.offset_y = y
+
+        centerX = PX_TO_WORLD(SIZE[0] / 2 + offset_x)
+        centerY = PX_TO_WORLD(SIZE[1] / 2 + offset_y)
+        point_item_center = self.v.pointset.item_that_contains((centerX, centerY))
+        shape = shapes.Shape(point_item_center)
+        if len(shape.vertices) >= 3:
+            points = list(to_px(v) for v in shape.vertices)
+            self.selected_polygon = list((x - offset_x, y - offset_y) for x, y in points)
+        else:
+            self.selected_polygon = None
+
+    def draw(self, surface):
         for p in self.v.pointset.point_items:
             screen_pos = to_px(p.point)
-            screen_pos = (screen_pos[0] - offset_x, screen_pos[1] - offset_y)
+            screen_pos = (screen_pos[0] - self.offset_x, screen_pos[1] - self.offset_y)
             pygame.draw.circle(surface, (0, 255, 0), screen_pos, 2)
 
             shape = shapes.Shape(p)
             if len(shape.vertices) >= 3:
                 points = list(to_px(v) for v in shape.vertices)
-                points = list((x - offset_x, y - offset_y) for x, y in points)
+                points = list((x - self.offset_x, y - self.offset_y) for x, y in points)
                 pygame.draw.polygon(surface, (255, 0, 255), points, 4)
+
+            if self.selected_polygon != None:
+                pygame.draw.polygon(surface, (255, 0, 255), self.selected_polygon)
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
@@ -65,6 +85,9 @@ direction_y = 0
 
 offset_x = 0
 offset_y = 0
+
+update_viewport(v, offset_x, offset_y)
+viewer.set_offset(offset_x, offset_y)
 
 while not done:
     for event in pygame.event.get():
@@ -93,9 +116,12 @@ while not done:
 
     offset_x += direction_x
     offset_y += direction_y
+    if direction_x != 0 or direction_y != 0:
+        viewer.set_offset(offset_x, offset_y)
+
     update_viewport(v, offset_x, offset_y)
 
     screen.fill((0, 0, 0))
-    viewer.draw(screen, offset_x, offset_y)
+    viewer.draw(screen)
     pygame.display.flip()
     clock_fps.tick_busy_loop(FPS)

@@ -48,51 +48,44 @@ class InfiniteLine:
         if v_n < 0:
             other_item.k.set_max(-AB_n / v_n)
 
-class Segment:
-    def __init__(self, A, B):
-        self.A = A
-        self.B = B
-        self.line = InfiniteLine(A, utils.vector(A, B))
-
-    def intersect(self, infinite_line):
-        k = self.line._k_intersect(infinite_line)
-        if k != None and k >= 0 and k <= 1:
-            return (self.line.point[0] + k * self.line.direction[0], self.line.point[1] + k * self.line.direction[1])
-        return None
-
-    def intersect_segment(self, segment):
-        inter = self.intersect(segment.line)
-        if inter == None:
-            return None
-        if segment.intersect(self.line) == None:
-            return None
-        return inter
-
-    def replace(self, old, new):
-        if self.A == old:
-            self.A = new
-        elif self.B == old:
-            self.B = new
-        else:
-            raise Exception("Segment.replace")
-        self.line = InfiniteLine(self.A, utils.vector(self.A, self.B))
+#class Segment:
+#    def __init__(self, A, B):
+#        self.A = A
+#        self.B = B
+#        self.line = InfiniteLine(A, utils.vector(A, B))
+#
+#    def intersect(self, infinite_line):
+#        k = self.line._k_intersect(infinite_line)
+#        if k != None and k >= 0 and k <= 1:
+#            return (self.line.point[0] + k * self.line.direction[0], self.line.point[1] + k * self.line.direction[1])
+#        return None
+#
+#    def intersect_segment(self, segment):
+#        inter = self.intersect(segment.line)
+#        if inter == None:
+#            return None
+#        if segment.intersect(self.line) == None:
+#            return None
+#        return inter
+#
+#    def replace(self, old, new):
+#        if self.A == old:
+#            self.A = new
+#        elif self.B == old:
+#            self.B = new
+#        else:
+#            raise Exception("Segment.replace")
+#        self.line = InfiniteLine(self.A, utils.vector(self.A, self.B))
 
 class Shape:
     def __init__(self, point_item):
         self.vertices = set()
-        if len(point_item.others) < 2:
-            return
-        if len(set(other for other in point_item.others if not other.k.is_determined())) > 0:
+        if not point_item.is_bounded():
             return
 
         # Compute segments edges
         for other in point_item.others:
-            kmin = other.k.min
-            kmax = other.k.max
-
-            v1 = (other.line.point[0] + kmin * other.line.direction[0], other.line.point[1] + kmin * other.line.direction[1])
-            v2 = (other.line.point[0] + kmax * other.line.direction[0], other.line.point[1] + kmax * other.line.direction[1])
-
+            v1, v2 = other.vertices()
             for v in [v1, v2]:
                 EPSILON = 1e-4
                 distances = list(utils.distance2(v, i) for i in self.vertices)

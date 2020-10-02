@@ -12,6 +12,16 @@ class OtherItem:
     def is_valid(self):
         return self.k.is_valid()
 
+    def vertices(self):
+        if not self.is_valid():
+            raise Exception("OtherItem.vertices")
+        kmin = self.k.min
+        kmax = self.k.max
+
+        v1 = (self.line.point[0] + kmin * self.line.direction[0], self.line.point[1] + kmin * self.line.direction[1])
+        v2 = (self.line.point[0] + kmax * self.line.direction[0], self.line.point[1] + kmax * self.line.direction[1])
+        return (v1, v2)
+
 class PointItem:
     def __init__(self, point):
         self.point = point
@@ -45,6 +55,13 @@ class PointItem:
             self.others |= {new_item}
             return new_item
         return None
+
+    def is_bounded(self):
+        if len(self.others) < 2:
+            return False
+        if len(set(other for other in self.others if not other.k.is_determined())) > 0:
+            return False
+        return True
 
     def delete_points(self, points_to_delete):
         EPSILON = 1e-4
@@ -85,6 +102,26 @@ class PointSet:
         self.point_items -= items_to_delete
         for p in points_to_delete:
             self.edges -= set((a, b) for a, b in self.edges if utils.distance2(p, a.point) < EPSILON or utils.distance2(p, b.point) < EPSILON)
+
+    def item_that_contains(self, point):
+        for point_item in self.point_items:
+            if not point_item.is_bounded():
+                continue
+
+            skip = False
+            for other in point_item.others:
+                edge_normal = utils.orthogonal(other.line.direction)
+                A, B = other.vertices()
+                AO = utils.vector(A, point_item.point)
+                AP = utils.vector(A, point)
+                if utils.dot(AO, edge_normal) < 0:
+                    edge_normal = (-edge_normal[0], -edge_normal[1])
+                if utils.dot(AP, edge_normal) < 0:
+                    skip = True
+                    break
+            if not skip:
+                return point_item
+        raise Exception("PointSet.item_that_contains: not found")
 
 class VoronoiExplorer:
     def __init__(self, filename, density):
