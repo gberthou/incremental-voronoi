@@ -48,7 +48,7 @@ class VoronoiViewer:
         self.offset_y = 0
 
         self.selected_polygon = None
-        #self.selected_neighbors = None
+        self.selected_neighbors = None
 
     def set_offset(self, x, y):
         self.offset_x = x
@@ -59,8 +59,7 @@ class VoronoiViewer:
         point_item_center = self.v.pointset.item_that_contains((centerX, centerY))
 
         self.selected_polygon = point_item_to_hull(point_item_center, x, y)
-        #self.selected_neighbors = self.v.pointset.neighbors_of(point_item_center)
-        print(len(self.v.pointset.neighbors_of(point_item_center)))
+        self.selected_neighbors = list(point_item_to_hull(item, x, y) for item in self.v.pointset.neighbors_of(point_item_center))
 
     def draw(self, surface):
         for p in self.v.pointset.point_items:
@@ -75,10 +74,9 @@ class VoronoiViewer:
             if self.selected_polygon != None:
                 pygame.draw.polygon(surface, (255, 0, 255), self.selected_polygon)
 
-                #for neighbor in self.selected_neighbors:
-                #    points = point_item_to_hull(neighbor, offset_x, offset_y)
-                #    if len(points) >= 3:
-                #        pygame.draw.polygon(surface, (255, 255, 255), points)
+                for neighbor in self.selected_neighbors:
+                    if len(neighbor) >= 3:
+                        pygame.draw.polygon(surface, (255, 255, 255), neighbor)
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)

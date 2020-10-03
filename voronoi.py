@@ -4,8 +4,8 @@ import chunk_generic
 import chunk_voronoi
 
 class OtherItem:
-    def __init__(self, other, line):
-        self.other = other
+    def __init__(self, item, line):
+        self.item = item
         self.line = line
         self.k = utils.Variable()
 
@@ -27,13 +27,13 @@ class PointItem:
         self.point = point
         self.others = set()
 
-    def add_other(self, other):
-        u = utils.vector(self.point, other)
+    def add_item(self, item):
+        u = utils.vector(self.point, item.point)
 
         direction = utils.orthogonal(u)
-        center = (.5 * (self.point[0] + other[0]), .5 * (self.point[1] + other[1]))
+        center = (.5 * (self.point[0] + item.point[0]), .5 * (self.point[1] + item.point[1]))
         line = shapes.InfiniteLine(center, direction)
-        new_item = OtherItem(other, line)
+        new_item = OtherItem(item, line)
 
         keep_new_item = True
         others_to_remove = set()
@@ -68,23 +68,21 @@ class PointItem:
         others_to_delete = set()
         for p in points_to_delete:
             for other in self.others:
-                if utils.distance2(other.other, p) < EPSILON:
+                if utils.distance2(other.item.point, p) < EPSILON:
                     others_to_delete |= {other}
         self.others -= others_to_delete
 
 class PointSet:
     def __init__(self):
         self.point_items = set()
-        self.edges = set()
 
     def add_point(self, point):
         item = PointItem(point)
 
         for i in self.point_items:
-            new_item = item.add_other(i.point)
+            new_item = item.add_item(i)
             if new_item != None:
-                i.add_other(point)
-                self.edges |= {(i, item)}
+                i.add_item(item)
         self.point_items |= {item}
 
     def delete_points(self, points_to_delete):
@@ -100,8 +98,6 @@ class PointSet:
             if not to_delete:
                 i.delete_points(points_to_delete)
         self.point_items -= items_to_delete
-        for p in points_to_delete:
-            self.edges -= set((a, b) for a, b in self.edges if utils.distance2(p, a.point) < EPSILON or utils.distance2(p, b.point) < EPSILON)
 
     def item_that_contains(self, point):
         for point_item in self.point_items:
@@ -114,9 +110,7 @@ class PointSet:
                 A, B = other.vertices()
                 AO = utils.vector(A, point_item.point)
                 AP = utils.vector(A, point)
-                if utils.dot(AO, edge_normal) < 0:
-                    edge_normal = (-edge_normal[0], -edge_normal[1])
-                if utils.dot(AP, edge_normal) < 0:
+                if utils.dot(AO, edge_normal) * utils.dot(AP, edge_normal) < 0:
                     skip = True
                     break
             if not skip:
@@ -124,13 +118,7 @@ class PointSet:
         raise Exception("PointSet.item_that_contains: not found")
 
     def neighbors_of(self, point_item):
-        ret = set()
-        for a, b in self.edges:
-            if a == point_item:
-                ret |= {b}
-            elif b == point_item:
-                ret |= {a}
-        return ret
+        return set(other.item for other in point_item.others)
 
 class VoronoiExplorer:
     def __init__(self, filename, density):
