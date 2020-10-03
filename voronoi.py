@@ -2,6 +2,7 @@ import utils
 import shapes
 import chunk_generic
 import chunk_voronoi
+import noise
 
 class OtherItem:
     def __init__(self, item, line):
@@ -125,6 +126,7 @@ class VoronoiExplorer:
         self.chunk_generator = chunk_voronoi.VoronoiChunkGenerator(density)
         self.chunk_database = chunk_voronoi.VoronoiChunkDatabase(filename)
         self.chunk_manager = chunk_generic.ChunkManager(self.chunk_generator, self.chunk_database)
+        self.noise = noise.Noise(1., self.chunk_database.seed)
 
         self.pointset = PointSet()
 
