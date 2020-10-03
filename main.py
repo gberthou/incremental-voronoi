@@ -34,6 +34,23 @@ def point_item_to_hull(point_item, offset_x, offset_y):
     points = list(to_px(v) for v in shape.vertices)
     return list((x - offset_x, y - offset_y) for x, y in points)
 
+def average_noise(noise, points):
+    return sum(noise.get(*p) for p in points) / len(points)
+
+def noise_to_color(x):
+    x = int((x + 1) * 255. / 2.)
+    return (x, x, x)
+
+def noise_to_biome(x):
+    A = -0.5
+    B = 0.5
+
+    if x < A:
+        return (0, 128, 0)
+    elif x < B:
+        return (0, 255, 0)
+    return (0, 0, 255)
+
 v = voronoi.VoronoiExplorer("world0", 4)
 
 import math
@@ -63,20 +80,23 @@ class VoronoiViewer:
 
     def draw(self, surface):
         for p in self.v.pointset.point_items:
-            screen_pos = to_px(p.point)
-            screen_pos = (screen_pos[0] - self.offset_x, screen_pos[1] - self.offset_y)
-            pygame.draw.circle(surface, (0, 255, 0), screen_pos, 2)
+            #screen_pos = to_px(p.point)
+            #screen_pos = (screen_pos[0] - self.offset_x, screen_pos[1] - self.offset_y)
+            #pygame.draw.circle(surface, (0, 255, 0), screen_pos, 2)
 
             points = point_item_to_hull(p, self.offset_x, self.offset_y)
             if len(points) >= 3:
-                pygame.draw.polygon(surface, (255, 0, 255), points, 4)
+                #x = average_noise(self.v.noise, points)
+                x = self.v.noise.get(*p.point)
+                color = noise_to_biome(x)
+                pygame.draw.polygon(surface, color, points)
 
-            if self.selected_polygon != None:
-                pygame.draw.polygon(surface, (255, 0, 255), self.selected_polygon)
+        if self.selected_polygon != None:
+            pygame.draw.polygon(surface, (255, 0, 255), self.selected_polygon)
 
-                for neighbor in self.selected_neighbors:
-                    if len(neighbor) >= 3:
-                        pygame.draw.polygon(surface, (255, 255, 255), neighbor)
+            for neighbor in self.selected_neighbors:
+                if len(neighbor) >= 3:
+                    pygame.draw.polygon(surface, (255, 255, 255), neighbor)
 
 pygame.init()
 screen = pygame.display.set_mode(SIZE)
