@@ -42,8 +42,8 @@ def noise_to_color(x):
     return (x, x, x)
 
 def noise_to_biome(x):
-    A = -0.5
-    B = 0.5
+    A = -0.1
+    B = 0.6
 
     if x < A:
         return (0, 128, 0)
