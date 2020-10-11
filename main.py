@@ -80,16 +80,16 @@ class VoronoiViewer:
 
     def draw(self, surface):
         for p in self.v.pointset.point_items:
-            #screen_pos = to_px(p.point)
-            #screen_pos = (screen_pos[0] - self.offset_x, screen_pos[1] - self.offset_y)
-            #pygame.draw.circle(surface, (0, 255, 0), screen_pos, 2)
+            screen_pos = to_px(p.point)
+            screen_pos = (screen_pos[0] - self.offset_x, screen_pos[1] - self.offset_y)
+            pygame.draw.circle(surface, (0, 255, 0), screen_pos, 2)
 
             points = point_item_to_hull(p, self.offset_x, self.offset_y)
             if len(points) >= 3:
                 #x = average_noise(self.v.noise, points)
                 x = self.v.noise.get(*p.point)
                 color = noise_to_biome(x)
-                pygame.draw.polygon(surface, color, points)
+                pygame.draw.polygon(surface, color, points, 4)
 
         if self.selected_polygon != None:
             pygame.draw.polygon(surface, (255, 0, 255), self.selected_polygon)
