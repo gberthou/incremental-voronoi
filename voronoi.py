@@ -145,3 +145,7 @@ class VoronoiExplorer:
         deleted_chunks = self.chunk_manager.keep_only_chunks(keys)
         for deleted_chunk in deleted_chunks:
             self.pointset.delete_points(deleted_chunk)
+
+    def loaded_shapes(self):
+        return list(shapes.Shape(i) for i in self.pointset.point_items)
+
