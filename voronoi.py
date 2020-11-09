@@ -24,7 +24,8 @@ class OtherItem:
         return (v1, v2)
 
 class PointItem:
-    def __init__(self, point):
+    def __init__(self, key, point):
+        self.key = key
         self.point = point
         self.others = set()
 
@@ -77,8 +78,8 @@ class PointSet:
     def __init__(self):
         self.point_items = set()
 
-    def add_point(self, point):
-        item = PointItem(point)
+    def add_point(self, key, point):
+        item = PointItem(key, point)
 
         for i in self.point_items:
             new_item = item.add_item(i)
@@ -135,7 +136,7 @@ class VoronoiExplorer:
 
         if is_new_chunk:
             for point in chunk:
-                self.pointset.add_point(point)
+                self.pointset.add_point(key, point)
 
     def unload_chunk(self, key):
         deleted_chunk = self.chunk_manager.unload_chunk(key)

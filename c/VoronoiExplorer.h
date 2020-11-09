@@ -19,6 +19,9 @@ struct Position
 
 typedef std::vector<Position> VoronoiFace;
 
+template<typename T>
+class VoronoiGraph;
+
 class VoronoiExplorer
 {
     public:
@@ -27,6 +30,17 @@ class VoronoiExplorer
 
         struct Key {
             ssize_t keyx, keyy;
+
+            bool operator==(const Key &other) const
+            {
+                return keyx == other.keyx && keyy == other.keyy;
+            }
+
+            bool operator<(const Key &other) const
+            {
+                return keyx < other.keyx
+                    || (keyx == other.keyx && keyy < other.keyy);
+            }
         };
 
         void LoadChunk(const Key &key);
@@ -36,12 +50,17 @@ class VoronoiExplorer
 
         double GetNoiseAt(double x, double y);
 
+        void GetGraph(VoronoiGraph<double> &graph);
+
     private:
         PyObject *_self;
         PyObject *_loadChunk;
         PyObject *_unloadChunk;
         PyObject *_keepOnlyChunks;
         PyObject *_loadedShapes;
+
+        PyObject *_pointsetitems;
+
         PyObject *_noise;
         PyObject *_noiseGet;
 };

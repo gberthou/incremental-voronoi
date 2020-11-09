@@ -5,6 +5,7 @@
 
 #include "gl.h"
 #include "VoronoiExplorer.h"
+#include "VoronoiGraph.h"
 #include "VoronoiDisplay.h"
 #include "ui.h"
 #include "glutils.h"
@@ -57,6 +58,10 @@ int main(void)
     std::vector<VoronoiFace> faces;
     voronoiExplorer->LoadedShapes(faces);
 
+    VGFloat graph;
+    voronoiExplorer->GetGraph(graph);
+    graph >> std::cout;
+
     VoronoiDisplay *display = new VoronoiDisplay(*voronoiExplorer, faces);
 
     while(ui.PollEvent())
@@ -65,7 +70,6 @@ int main(void)
             eye, 
             glm::vec3(eye.x+1e-6, eye.y, 0),
             glm::vec3(0, 0, 1)
-            //glm::vec3(1, 0, 0)
         );
 
         program.Apply();

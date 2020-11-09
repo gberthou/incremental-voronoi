@@ -1,6 +1,20 @@
 #include <Python.h>
 
 #include "VoronoiExplorer.h"
+#include "VoronoiGraph.h"
+
+static VoronoiExplorer::Key keyOfPointItem(PyObject *pointitem)
+{
+    auto key = PyObject_GetAttrString(pointitem, "key");
+    auto _keyx = PyTuple_GetItem(key, 0);
+    auto _keyy = PyTuple_GetItem(key, 1);
+    ssize_t keyx = PyLong_AsSsize_t(_keyx);
+    ssize_t keyy = PyLong_AsSsize_t(_keyy);
+    //Py_DECREF(_keyx);
+    //Py_DECREF(_keyy);
+    Py_DECREF(key);
+    return {keyx, keyy};
+}
 
 VoronoiExplorer::VoronoiExplorer(PyObject *voronoiModule, const std::string &filename, size_t density)
 {
@@ -14,9 +28,15 @@ VoronoiExplorer::VoronoiExplorer(PyObject *voronoiModule, const std::string &fil
     _unloadChunk    = PyObject_GetAttrString(_self, "unload_chunk");
     _keepOnlyChunks = PyObject_GetAttrString(_self, "keep_only_chunks");
     _loadedShapes   = PyObject_GetAttrString(_self, "loaded_shapes");
-    _noise          = PyObject_GetAttrString(_self, "noise");
+
+    auto _pointset  = PyObject_GetAttrString(_self, "pointset");
+    _pointsetitems  = PyObject_GetAttrString(_pointset, "point_items");
+
+    auto _noise     = PyObject_GetAttrString(_self, "noise");
     _noiseGet       = PyObject_GetAttrString(_noise, "get");
 
+    Py_DECREF(_pointset);
+    Py_DECREF(_noise);
     Py_DECREF(args);
     Py_DECREF(_filename);
     Py_DECREF(_density);
@@ -30,8 +50,10 @@ VoronoiExplorer::~VoronoiExplorer()
     Py_DECREF(_unloadChunk);
     Py_DECREF(_keepOnlyChunks);
     Py_DECREF(_loadedShapes);
+
+    Py_DECREF(_pointsetitems);
+
     Py_DECREF(_noiseGet);
-    Py_DECREF(_noise);
 }
 
 void VoronoiExplorer::LoadChunk(const Key &key)
@@ -144,5 +166,38 @@ double VoronoiExplorer::GetNoiseAt(double x, double y)
     Py_DECREF(_y);
 
     return ret;
+}
+
+void VoronoiExplorer::GetGraph(VoronoiGraph<double> &graph)
+{
+    auto it = PyObject_GetIter(_pointsetitems);
+    PyObject *pointitem;
+
+    while((pointitem = PyIter_Next(it)))
+    {
+        auto key = keyOfPointItem(pointitem);
+
+        auto others = PyObject_GetAttrString(pointitem, "others");
+        auto itothers = PyObject_GetIter(others);
+        Py_DECREF(others);
+
+        PyObject *other;
+
+        while((other = PyIter_Next(itothers)))
+        {
+            auto otheritem = PyObject_GetAttrString(other, "item");
+            Py_DECREF(other);
+            auto otherkey = keyOfPointItem(otheritem);
+            Py_DECREF(otheritem);
+
+            VoronoiEdge edge(key, otherkey);
+            graph.TryInsertEdge(edge, GetNoiseAt((key.keyx + otherkey.keyx) / 2., (key.keyy + otherkey.keyy) / 2.));
+        }
+
+        Py_DECREF(itothers);
+        Py_DECREF(pointitem);
+    }
+
+    Py_DECREF(it);
 }
 
