@@ -20,4 +20,6 @@ std::ostream &VoronoiGraph<T>::operator>>(std::ostream &os)
     return os;
 }
 
+template class VoronoiGraph<double>;
+
 

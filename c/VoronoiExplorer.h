@@ -6,51 +6,24 @@
 
 #include <Python.h>
 
-struct Position
-{
-    Position(double a, double b):
-        x(a),
-        y(b)
-    {
-    }
+#include "VoronoiUtils.h"
+#include "VoronoiGraph.h"
 
-    double x, y;
-};
-
-typedef std::vector<Position> VoronoiFace;
-
-template<typename T>
-class VoronoiGraph;
-
+template<typename T, typename F>
 class VoronoiExplorer
 {
     public:
         VoronoiExplorer(PyObject *voronoiModule, const std::string &filename, size_t density);
         ~VoronoiExplorer();
 
-        struct Key {
-            ssize_t keyx, keyy;
-
-            bool operator==(const Key &other) const
-            {
-                return keyx == other.keyx && keyy == other.keyy;
-            }
-
-            bool operator<(const Key &other) const
-            {
-                return keyx < other.keyx
-                    || (keyx == other.keyx && keyy < other.keyy);
-            }
-        };
-
-        void LoadChunk(const Key &key);
-        void UnloadChunk(const Key &key);
-        void KeepOnlyChunks(const std::vector<Key> &keys);
+        void LoadChunk(const VoronoiKey &key);
+        void UnloadChunk(const VoronoiKey &key);
+        void KeepOnlyChunks(const std::vector<VoronoiKey> &keys);
         void LoadedShapes(std::vector<VoronoiFace> &faces);
 
-        double GetNoiseAt(double x, double y);
+        void GetGraph(VoronoiGraph<T> &graph, const F &noiseFunction);
 
-        void GetGraph(VoronoiGraph<double> &graph);
+        size_t GetSeed();
 
     private:
         PyObject *_self;
@@ -60,9 +33,6 @@ class VoronoiExplorer
         PyObject *_loadedShapes;
 
         PyObject *_pointsetitems;
-
-        PyObject *_noise;
-        PyObject *_noiseGet;
 };
 
 #endif

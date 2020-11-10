@@ -4,13 +4,13 @@
 #include <iostream>
 #include <map>
 
-#include "VoronoiExplorer.h"
+#include "VoronoiUtils.h"
 
 struct VoronoiEdge
 {
-    VoronoiExplorer::Key a, b;
+    VoronoiKey a, b;
 
-    VoronoiEdge(const VoronoiExplorer::Key &x, const VoronoiExplorer::Key &y):
+    VoronoiEdge(const VoronoiKey &x, const VoronoiKey &y):
         a(x),
         b(y)
     {
@@ -47,10 +47,6 @@ class VoronoiGraph
     private:
         std::map<VoronoiEdge, T> edges;
 };
-
-
-using VGFloat = VoronoiGraph<double>;
-template class VoronoiGraph<double>;
 
 #endif
 

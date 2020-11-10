@@ -2,14 +2,15 @@
 #include <array>
 #include <GL/gl.h>
 
-#include "VoronoiExplorer.h"
+#include "VoronoiUtils.h"
 #include "glutils.h"
 
+template<typename F>
 class VoronoiDisplay
 {
     public:
         VoronoiDisplay(
-            VoronoiExplorer &explorer,
+            const F &noiseFunction,
             const std::vector<VoronoiFace> &voronoiFaces
         );
         ~VoronoiDisplay();

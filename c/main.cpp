@@ -7,6 +7,7 @@
 #include "VoronoiExplorer.h"
 #include "VoronoiGraph.h"
 #include "VoronoiDisplay.h"
+#include "Noise.h"
 #include "ui.h"
 #include "glutils.h"
 
@@ -16,7 +17,6 @@ static auto initPython()
     PyImport_ImportModule("math");
     PyImport_ImportModule("random");
     PyImport_ImportModule("struct");
-    PyImport_ImportModule("opensimplex");
 
     PySys_SetPath(L"..");
     return PyImport_ImportModule("voronoi");
@@ -35,8 +35,10 @@ int main(void)
 {
     auto voronoiModule = initPython();
 
-    VoronoiExplorer *voronoiExplorer = new VoronoiExplorer(voronoiModule, "world1", 4);
+    VoronoiExplorer<double, Noise> voronoiExplorer(voronoiModule, "world1", 4);
     Py_DECREF(voronoiModule);
+
+    Noise noise(0.25, voronoiExplorer.GetSeed());
 
     const unsigned int width = 800;
     const unsigned int height = 600;
@@ -49,20 +51,20 @@ int main(void)
     program.Apply();
     program.SetProj(proj);
 
-    glm::vec3 eye(2, 2, 4);
-
     for(ssize_t y = 0; y < 4; ++y)
         for(ssize_t x = 0; x < 4; ++x)
-            voronoiExplorer->LoadChunk({x, y});
+            voronoiExplorer.LoadChunk({x, y});
 
     std::vector<VoronoiFace> faces;
-    voronoiExplorer->LoadedShapes(faces);
+    voronoiExplorer.LoadedShapes(faces);
 
-    VGFloat graph;
-    voronoiExplorer->GetGraph(graph);
+    VoronoiGraph<double> graph;
+    voronoiExplorer.GetGraph(graph, noise);
     graph >> std::cout;
 
-    VoronoiDisplay *display = new VoronoiDisplay(*voronoiExplorer, faces);
+    VoronoiDisplay<Noise> *display = new VoronoiDisplay<Noise>(noise, faces);
+
+    glm::vec3 eye(2, 2, 4);
 
     while(ui.PollEvent())
     {
@@ -80,8 +82,6 @@ int main(void)
         ui.Refresh();
     }
 
-    delete voronoiExplorer;
-    
     return EXIT_SUCCESS;
 }
 

@@ -1,8 +1,9 @@
 #include "gl.h"
 #include "VoronoiDisplay.h"
 
-VoronoiDisplay::VoronoiDisplay(
-    VoronoiExplorer &explorer,
+template<typename F>
+VoronoiDisplay<F>::VoronoiDisplay(
+    const F &noiseFunction,
     const std::vector<VoronoiFace> &voronoiFaces
 )
 {
@@ -31,7 +32,7 @@ VoronoiDisplay::VoronoiDisplay(
 
         face.indices[i] = offset;
 
-        float intensity = explorer.GetNoiseAt(face.centrum[0], face.centrum[1]);
+        float intensity = noiseFunction(face.centrum[0], face.centrum[1]);
 
         face.color = {intensity, intensity, intensity};
         faces.push_back(face);
@@ -42,12 +43,14 @@ VoronoiDisplay::VoronoiDisplay(
     glBufferData(GL_ARRAY_BUFFER, vertexData.size() * sizeof(float), vertexData.data(), GL_STATIC_DRAW);
 }
 
-VoronoiDisplay::~VoronoiDisplay()
+template<typename F>
+VoronoiDisplay<F>::~VoronoiDisplay()
 {
     glDeleteBuffers(1, &vertexBuffer);
 }
 
-void VoronoiDisplay::Draw(const glutils::ProgramWorld &program) const
+template<typename F>
+void VoronoiDisplay<F>::Draw(const glutils::ProgramWorld &program) const
 {
     program.Apply();
     program.BindVAO();
@@ -78,4 +81,6 @@ void VoronoiDisplay::centrumOf(const std::vector<GLuint> &faceIndices, std::arra
     centrum[1] /= faceIndices.size() - 1;
 }
 */
+
+#include "VoronoiDisplayImplementation.h"
 

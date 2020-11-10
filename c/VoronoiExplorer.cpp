@@ -3,7 +3,7 @@
 #include "VoronoiExplorer.h"
 #include "VoronoiGraph.h"
 
-static VoronoiExplorer::Key keyOfPointItem(PyObject *pointitem)
+static VoronoiKey keyOfPointItem(PyObject *pointitem)
 {
     auto key = PyObject_GetAttrString(pointitem, "key");
     auto _keyx = PyTuple_GetItem(key, 0);
@@ -16,7 +16,8 @@ static VoronoiExplorer::Key keyOfPointItem(PyObject *pointitem)
     return {keyx, keyy};
 }
 
-VoronoiExplorer::VoronoiExplorer(PyObject *voronoiModule, const std::string &filename, size_t density)
+template<typename T, typename F>
+VoronoiExplorer<T, F>::VoronoiExplorer(PyObject *voronoiModule, const std::string &filename, size_t density)
 {
     auto constructor = PyObject_GetAttrString(voronoiModule, "VoronoiExplorer");
 
@@ -32,18 +33,15 @@ VoronoiExplorer::VoronoiExplorer(PyObject *voronoiModule, const std::string &fil
     auto _pointset  = PyObject_GetAttrString(_self, "pointset");
     _pointsetitems  = PyObject_GetAttrString(_pointset, "point_items");
 
-    auto _noise     = PyObject_GetAttrString(_self, "noise");
-    _noiseGet       = PyObject_GetAttrString(_noise, "get");
-
     Py_DECREF(_pointset);
-    Py_DECREF(_noise);
     Py_DECREF(args);
     Py_DECREF(_filename);
     Py_DECREF(_density);
     Py_DECREF(constructor);
 }
 
-VoronoiExplorer::~VoronoiExplorer()
+template<typename T, typename F>
+VoronoiExplorer<T, F>::~VoronoiExplorer()
 {
     Py_DECREF(_self);
     Py_DECREF(_loadChunk);
@@ -52,11 +50,10 @@ VoronoiExplorer::~VoronoiExplorer()
     Py_DECREF(_loadedShapes);
 
     Py_DECREF(_pointsetitems);
-
-    Py_DECREF(_noiseGet);
 }
 
-void VoronoiExplorer::LoadChunk(const Key &key)
+template<typename T, typename F>
+void VoronoiExplorer<T, F>::LoadChunk(const VoronoiKey &key)
 {
     auto keyx = PyLong_FromSsize_t(key.keyx);
     auto keyy = PyLong_FromSsize_t(key.keyy);
@@ -71,7 +68,8 @@ void VoronoiExplorer::LoadChunk(const Key &key)
     Py_DECREF(keyy);
 }
 
-void VoronoiExplorer::UnloadChunk(const Key &key)
+template<typename T, typename F>
+void VoronoiExplorer<T, F>::UnloadChunk(const VoronoiKey &key)
 {
     auto keyx = PyLong_FromSsize_t(key.keyx);
     auto keyy = PyLong_FromSsize_t(key.keyy);
@@ -86,7 +84,8 @@ void VoronoiExplorer::UnloadChunk(const Key &key)
     Py_DECREF(keyy);
 }
 
-void VoronoiExplorer::KeepOnlyChunks(const std::vector<Key> &keys)
+template<typename T, typename F>
+void VoronoiExplorer<T, F>::KeepOnlyChunks(const std::vector<VoronoiKey> &keys)
 {
     auto keyset = PySet_New(NULL);
     for(const auto &key : keys)
@@ -108,7 +107,8 @@ void VoronoiExplorer::KeepOnlyChunks(const std::vector<Key> &keys)
     Py_DECREF(keyset);
 }
 
-void VoronoiExplorer::LoadedShapes(std::vector<VoronoiFace> &faces)
+template<typename T, typename F>
+void VoronoiExplorer<T, F>::LoadedShapes(std::vector<VoronoiFace> &faces)
 {
     auto list = PyObject_CallObject(_loadedShapes, NULL);
     Py_ssize_t size = PyList_Size(list);
@@ -151,24 +151,8 @@ void VoronoiExplorer::LoadedShapes(std::vector<VoronoiFace> &faces)
     }
 }
 
-double VoronoiExplorer::GetNoiseAt(double x, double y)
-{
-    auto _x = PyFloat_FromDouble(x);
-    auto _y = PyFloat_FromDouble(y);
-    auto args = PyTuple_Pack(2, _x, _y);
-
-    auto _ret = PyObject_CallObject(_noiseGet, args);
-    double ret = PyFloat_AsDouble(_ret);
-
-    Py_DECREF(_ret);
-    Py_DECREF(args);
-    Py_DECREF(_x);
-    Py_DECREF(_y);
-
-    return ret;
-}
-
-void VoronoiExplorer::GetGraph(VoronoiGraph<double> &graph)
+template<typename T, typename F>
+void VoronoiExplorer<T, F>::GetGraph(VoronoiGraph<T> &graph, const F &noiseFunction)
 {
     auto it = PyObject_GetIter(_pointsetitems);
     PyObject *pointitem;
@@ -191,7 +175,7 @@ void VoronoiExplorer::GetGraph(VoronoiGraph<double> &graph)
             Py_DECREF(otheritem);
 
             VoronoiEdge edge(key, otherkey);
-            graph.TryInsertEdge(edge, GetNoiseAt((key.keyx + otherkey.keyx) / 2., (key.keyy + otherkey.keyy) / 2.));
+            graph.TryInsertEdge(edge, noiseFunction((key.keyx + otherkey.keyx) / 2., (key.keyy + otherkey.keyy) / 2.));
         }
 
         Py_DECREF(itothers);
@@ -200,4 +184,18 @@ void VoronoiExplorer::GetGraph(VoronoiGraph<double> &graph)
 
     Py_DECREF(it);
 }
+
+template<typename T, typename F>
+size_t VoronoiExplorer<T, F>::GetSeed()
+{
+    auto chunkDatabase = PyObject_GetAttrString(_self, "chunk_database");
+    auto _seed = PyObject_GetAttrString(chunkDatabase, "seed");
+    size_t ret = PyLong_AsSize_t(_seed);
+    Py_DECREF(_seed);
+    Py_DECREF(chunkDatabase);
+
+    return ret;
+}
+
+#include "VoronoiExplorerImplementation.h"
 
