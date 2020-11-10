@@ -4,24 +4,42 @@
 #include <cstddef>
 #include <vector>
 
-struct VoronoiKey {
+struct VoronoiChunkKey
+{
     ssize_t keyx, keyy;
 
-    bool operator==(const VoronoiKey &other) const
+    bool operator==(const VoronoiChunkKey &other) const
     {
         return keyx == other.keyx && keyy == other.keyy;
     }
 
-    bool operator<(const VoronoiKey &other) const
+    bool operator<(const VoronoiChunkKey &other) const
     {
         return keyx < other.keyx
             || (keyx == other.keyx && keyy < other.keyy);
     }
 };
 
-struct Position
+struct VoronoiNodeKey
 {
-    Position(double a, double b):
+    VoronoiChunkKey chunkkey;
+    size_t id;
+
+    bool operator==(const VoronoiNodeKey &other) const
+    {
+        return chunkkey == other.chunkkey && id == other.id;
+    }
+
+    bool operator<(const VoronoiNodeKey &other) const
+    {
+        return chunkkey < other.chunkkey
+            || (chunkkey == other.chunkkey && id < other.id);
+    }
+};
+
+struct VoronoiPosition
+{
+    VoronoiPosition(double a, double b):
         x(a),
         y(b)
     {
@@ -30,7 +48,7 @@ struct Position
     double x, y;
 };
 
-typedef std::vector<Position> VoronoiFace;
+typedef std::vector<VoronoiPosition> VoronoiFace;
 
 #endif
 

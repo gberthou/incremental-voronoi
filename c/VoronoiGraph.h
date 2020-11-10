@@ -8,9 +8,9 @@
 
 struct VoronoiEdge
 {
-    VoronoiKey a, b;
+    VoronoiNodeKey a, b;
 
-    VoronoiEdge(const VoronoiKey &x, const VoronoiKey &y):
+    VoronoiEdge(const VoronoiNodeKey &x, const VoronoiNodeKey &y):
         a(x),
         b(y)
     {

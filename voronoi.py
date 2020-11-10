@@ -133,8 +133,8 @@ class VoronoiExplorer:
         is_new_chunk, chunk = self.chunk_manager.load_chunk(key)
 
         if is_new_chunk:
-            for point in chunk:
-                self.pointset.add_point(key, point)
+            for i, point in enumerate(chunk):
+                self.pointset.add_point((*key, i), point)
 
     def unload_chunk(self, key):
         deleted_chunk = self.chunk_manager.unload_chunk(key)

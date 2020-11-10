@@ -3,17 +3,20 @@
 #include "VoronoiExplorer.h"
 #include "VoronoiGraph.h"
 
-static VoronoiKey keyOfPointItem(PyObject *pointitem)
+static VoronoiNodeKey keyOfPointItem(PyObject *pointitem)
 {
     auto key = PyObject_GetAttrString(pointitem, "key");
     auto _keyx = PyTuple_GetItem(key, 0);
     auto _keyy = PyTuple_GetItem(key, 1);
+    auto _keyz = PyTuple_GetItem(key, 2);
     ssize_t keyx = PyLong_AsSsize_t(_keyx);
     ssize_t keyy = PyLong_AsSsize_t(_keyy);
+    size_t keyz = PyLong_AsSize_t(_keyz);
     //Py_DECREF(_keyx);
     //Py_DECREF(_keyy);
+    //Py_DECREF(_keyz);
     Py_DECREF(key);
-    return {keyx, keyy};
+    return {keyx, keyy, keyz};
 }
 
 template<typename T, typename F>
@@ -53,7 +56,7 @@ VoronoiExplorer<T, F>::~VoronoiExplorer()
 }
 
 template<typename T, typename F>
-void VoronoiExplorer<T, F>::LoadChunk(const VoronoiKey &key)
+void VoronoiExplorer<T, F>::LoadChunk(const VoronoiChunkKey &key)
 {
     auto keyx = PyLong_FromSsize_t(key.keyx);
     auto keyy = PyLong_FromSsize_t(key.keyy);
@@ -69,7 +72,7 @@ void VoronoiExplorer<T, F>::LoadChunk(const VoronoiKey &key)
 }
 
 template<typename T, typename F>
-void VoronoiExplorer<T, F>::UnloadChunk(const VoronoiKey &key)
+void VoronoiExplorer<T, F>::UnloadChunk(const VoronoiChunkKey &key)
 {
     auto keyx = PyLong_FromSsize_t(key.keyx);
     auto keyy = PyLong_FromSsize_t(key.keyy);
@@ -85,7 +88,7 @@ void VoronoiExplorer<T, F>::UnloadChunk(const VoronoiKey &key)
 }
 
 template<typename T, typename F>
-void VoronoiExplorer<T, F>::KeepOnlyChunks(const std::vector<VoronoiKey> &keys)
+void VoronoiExplorer<T, F>::KeepOnlyChunks(const std::vector<VoronoiChunkKey> &keys)
 {
     auto keyset = PySet_New(NULL);
     for(const auto &key : keys)
@@ -175,7 +178,7 @@ void VoronoiExplorer<T, F>::GetGraph(VoronoiGraph<T> &graph, const F &noiseFunct
             Py_DECREF(otheritem);
 
             VoronoiEdge edge(key, otherkey);
-            graph.TryInsertEdge(edge, noiseFunction((key.keyx + otherkey.keyx) / 2., (key.keyy + otherkey.keyy) / 2.));
+            graph.TryInsertEdge(edge, noiseFunction((key.chunkkey.keyx + otherkey.chunkkey.keyx) / 2., (key.chunkkey.keyy + otherkey.chunkkey.keyy) / 2.));
         }
 
         Py_DECREF(itothers);

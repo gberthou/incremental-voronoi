@@ -16,9 +16,9 @@ class VoronoiExplorer
         VoronoiExplorer(PyObject *voronoiModule, const std::string &filename, size_t density);
         ~VoronoiExplorer();
 
-        void LoadChunk(const VoronoiKey &key);
-        void UnloadChunk(const VoronoiKey &key);
-        void KeepOnlyChunks(const std::vector<VoronoiKey> &keys);
+        void LoadChunk(const VoronoiChunkKey &key);
+        void UnloadChunk(const VoronoiChunkKey &key);
+        void KeepOnlyChunks(const std::vector<VoronoiChunkKey> &keys);
         void LoadedShapes(std::vector<VoronoiFace> &faces);
 
         void GetGraph(VoronoiGraph<T> &graph, const F &noiseFunction);

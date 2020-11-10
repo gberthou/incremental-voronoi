@@ -16,7 +16,11 @@ template<typename T>
 std::ostream &VoronoiGraph<T>::operator>>(std::ostream &os)
 {
     for(const auto &it : edges)
-        os << '(' << it.first.a.keyx << ", " << it.first.a.keyy << ") -> (" << it.first.b.keyx << ", " << it.first.b.keyy << "): " << it.second << std::endl;
+        os << '('
+           << it.first.a.chunkkey.keyx << ", " << it.first.a.chunkkey.keyy << ", " << it.first.a.id
+           << ") -> ("
+           << it.first.b.chunkkey.keyx << ", " << it.first.b.chunkkey.keyy << ", " << it.first.b.id
+           << "): " << it.second << std::endl;
     return os;
 }
 
